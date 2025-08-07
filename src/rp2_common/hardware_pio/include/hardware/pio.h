@@ -786,6 +786,15 @@ static inline uint pio_get_gpio_base(PIO pio) {
 #endif
 }
 
+static inline void check_pio_pin_mask(__unused PIO pio, __unused uint sm, __unused uint32_t pinmask) {
+    // check no pins are set in the mask which are incompatible with the pio
+#if PICO_PIO_USE_GPIO_BASE
+    valid_params_if(HARDWARE_PIO, (pinmask & ~(0xfffffffful << pio_get_gpio_base(pio))) == 0);
+#else
+    valid_params_if(HARDWARE_PIO, (pinmask & ~0xfffffffful) == 0);
+#endif
+}
+
 static inline void check_pio_pin_mask64(__unused PIO pio, __unused uint sm, __unused uint64_t pinmask) {
     // check no pins are set in the mask which are incompatible with the pio
 #if PICO_PIO_USE_GPIO_BASE
