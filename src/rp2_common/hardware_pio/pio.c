@@ -344,6 +344,7 @@ int pio_sm_set_consecutive_pindirs(PIO pio, uint sm, uint pin, uint count, bool 
     check_pio_param(pio);
     check_sm_param(sm);
 #if PICO_PIO_USE_GPIO_BASE
+    invalid_params_if_and_return(HARDWARE_PIO, pin < pio_get_gpio_base(pio), PICO_ERROR_INVALID_ARG);
     pin -= pio_get_gpio_base(pio);
 #endif
     invalid_params_if_and_return(HARDWARE_PIO, pin >= 32u, PICO_ERROR_INVALID_ARG);

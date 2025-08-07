@@ -1514,6 +1514,7 @@ static inline void pio_sm_set_out_pins(PIO pio, uint sm, uint out_base, uint out
     check_pio_param(pio);
     check_sm_param(sm);
 #if PICO_PIO_USE_GPIO_BASE
+    invalid_params_if(HARDWARE_PIO, out_base < pio_get_gpio_base(pio));
     out_base -= pio_get_gpio_base(pio);
 #endif
     valid_params_if(HARDWARE_PIO, out_base < 32);
@@ -1538,6 +1539,7 @@ static inline void pio_sm_set_set_pins(PIO pio, uint sm, uint set_base, uint set
     check_pio_param(pio);
     check_sm_param(sm);
 #if PICO_PIO_USE_GPIO_BASE
+    invalid_params_if(HARDWARE_PIO, set_base < pio_get_gpio_base(pio));
     set_base -= pio_get_gpio_base(pio);
 #endif
     valid_params_if(HARDWARE_PIO, set_base < 32);
@@ -1560,6 +1562,7 @@ static inline void pio_sm_set_in_pins(PIO pio, uint sm, uint in_base) {
     check_pio_param(pio);
     check_sm_param(sm);
 #if PICO_PIO_USE_GPIO_BASE
+    invalid_params_if(HARDWARE_PIO, in_base < pio_get_gpio_base(pio));
     in_base -= pio_get_gpio_base(pio);
 #endif
     valid_params_if(HARDWARE_PIO, in_base < 32);
@@ -1580,6 +1583,7 @@ static inline void pio_sm_set_sideset_pins(PIO pio, uint sm, uint sideset_base) 
     check_pio_param(pio);
     check_sm_param(sm);
 #if PICO_PIO_USE_GPIO_BASE
+    invalid_params_if(HARDWARE_PIO, sideset_base < pio_get_gpio_base(pio));
     sideset_base -= pio_get_gpio_base(pio);
 #endif
     valid_params_if(HARDWARE_PIO, sideset_base < 32);
@@ -1599,6 +1603,7 @@ static inline void pio_sm_set_jmp_pin(PIO pio, uint sm, uint pin) {
     check_pio_param(pio);
     check_sm_param(sm);
 #if PICO_PIO_USE_GPIO_BASE
+    invalid_params_if(HARDWARE_PIO, pin < pio_get_gpio_base(pio));
     pin -= pio_get_gpio_base(pio);
 #endif
     valid_params_if(HARDWARE_PIO, pin < 32);
