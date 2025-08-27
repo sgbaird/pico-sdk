@@ -578,8 +578,8 @@ static inline uint32_t dma_encode_endless_transfer_count(void) {
 #if PICO_RP2040
     panic_unsupported();
 #else
-    static_assert(DMA_CH0_TRANS_COUNT_MODE_VALUE_ENDLESS == 0xf);
-    static_assert(DMA_CH0_TRANS_COUNT_MODE_LSB == 28);
+    static_assert(DMA_CH0_TRANS_COUNT_MODE_VALUE_ENDLESS == 0xf, "");
+    static_assert(DMA_CH0_TRANS_COUNT_MODE_LSB == 28, "");
     return 0xffffffffu;
 #endif
 }
