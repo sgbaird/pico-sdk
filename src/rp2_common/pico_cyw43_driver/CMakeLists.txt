@@ -30,6 +30,7 @@ if (EXISTS ${PICO_CYW43_DRIVER_PATH}/${CYW43_DRIVER_TEST_FILE})
             ${PICO_CYW43_DRIVER_PATH}/src/cyw43_stats.c
             ${PICO_CYW43_DRIVER_PATH}/src/cyw43_lwip.c
             ${PICO_CYW43_DRIVER_PATH}/src/cyw43_ctrl.c
+            ${PICO_CYW43_DRIVER_PATH}/src/cyw43_wpa2_enterprise.c
             )
     target_include_directories(cyw43_driver_headers SYSTEM INTERFACE
             ${PICO_CYW43_DRIVER_PATH}/src

@@ -6,6 +6,7 @@ if (PICO_CYW43_SUPPORTED) # set by BOARD=pico-w
                 ${CMAKE_CURRENT_LIST_DIR}/cyw43_arch_poll.c
                 ${CMAKE_CURRENT_LIST_DIR}/cyw43_arch_threadsafe_background.c
                 ${CMAKE_CURRENT_LIST_DIR}/cyw43_arch_freertos.c
+                ${CMAKE_CURRENT_LIST_DIR}/cyw43_arch_wpa2_enterprise.c
                 )
 
         target_include_directories(pico_cyw43_arch_headers SYSTEM INTERFACE
