@@ -1,0 +1,463 @@
+diff --git a/src/cyw43.h b/src/cyw43.h
+index 88a8438..9b1aeab 100644
+--- a/src/cyw43.h
++++ b/src/cyw43.h
+@@ -146,6 +146,10 @@ typedef struct _cyw43_t {
+     // mac from otp (or from cyw43_hal_generate_laa_mac if not set)
+     uint8_t mac[6];
+ 
++    // WPA2-Enterprise state
++    bool wpa2_ent_enabled;
++    cyw43_wpa2_ent_credentials_t *wpa2_ent_credentials;
++
+     #if CYW43_ENABLE_BLUETOOTH
+     bool bt_loaded;
+     #endif
+@@ -361,6 +365,55 @@ int cyw43_wifi_join(cyw43_t *self, size_t ssid_len, const uint8_t *ssid, size_t
+  */
+ int cyw43_wifi_leave(cyw43_t *self, int itf);
+ 
++/*!
++ * \brief Enable WPA2-Enterprise authentication
++ *
++ * This function enables WPA2-Enterprise mode for subsequent connections.
++ * WPA2-Enterprise authentication supports EAP-TLS, PEAP-MSCHAPv2, and EAP-TTLS methods.
++ *
++ * \param self the driver state object. This should always be \c &cyw43_state
++ * \return 0 on success, negative error code on failure
++ */
++int cyw43_wifi_wpa2_ent_enable(cyw43_t *self);
++
++/*!
++ * \brief Disable WPA2-Enterprise authentication
++ *
++ * This function disables WPA2-Enterprise mode and clears stored credentials.
++ *
++ * \param self the driver state object. This should always be \c &cyw43_state
++ * \return 0 on success, negative error code on failure
++ */
++int cyw43_wifi_wpa2_ent_disable(cyw43_t *self);
++
++/*!
++ * \brief Set WPA2-Enterprise credentials
++ *
++ * This function configures the credentials for WPA2-Enterprise authentication.
++ * The credentials structure contains identity, username, password, and certificates
++ * depending on the selected EAP method.
++ *
++ * \param self the driver state object. This should always be \c &cyw43_state
++ * \param credentials pointer to WPA2-Enterprise credentials structure
++ * \return 0 on success, negative error code on failure
++ */
++int cyw43_wifi_wpa2_ent_set_credentials(cyw43_t *self, const cyw43_wpa2_ent_credentials_t *credentials);
++
++/*!
++ * \brief Connect to a WPA2-Enterprise network
++ *
++ * Connect to a WPA2-Enterprise wifi network in STA (client) mode using the configured credentials.
++ * WPA2-Enterprise must be enabled and credentials must be set before calling this function.
++ *
++ * \param self the driver state object. This should always be \c &cyw43_state
++ * \param ssid_len the length of the wifi network name
++ * \param ssid A buffer containing the wifi network name
++ * \param bssid the mac address of the access point to connect to. This can be NULL.
++ * \param channel Used to set the band of the connection. This is only used if bssid is non NULL.
++ * \return 0 on success, negative error code on failure
++ */
++int cyw43_wifi_join_wpa2_ent(cyw43_t *self, size_t ssid_len, const uint8_t *ssid, const uint8_t *bssid, uint32_t channel);
++
+ /*!
+  * \brief Get the signal strength (RSSI) of the wifi network
+  *
+diff --git a/src/cyw43_ll.h b/src/cyw43_ll.h
+index fe7c68f..6a5b1d5 100644
+--- a/src/cyw43_ll.h
++++ b/src/cyw43_ll.h
+@@ -173,6 +173,9 @@
+ #define CYW43_AUTH_WPA2_MIXED_PSK (0x00400006)  ///< WPA2/WPA mixed authorisation
+ #define CYW43_AUTH_WPA3_SAE_AES_PSK  (0x01000004)   ///< WPA3 AES authorisation
+ #define CYW43_AUTH_WPA3_WPA2_AES_PSK (0x01400004)   ///< WPA2/WPA3 authorisation
++#define CYW43_AUTH_WPA2_ENTERPRISE_TLS (0x00800008)   ///< WPA2 Enterprise with EAP-TLS
++#define CYW43_AUTH_WPA2_ENTERPRISE_PEAP (0x00800010)  ///< WPA2 Enterprise with PEAP-MSCHAPv2
++#define CYW43_AUTH_WPA2_ENTERPRISE_TTLS (0x00800020)  ///< WPA2 Enterprise with EAP-TTLS
+ //!\}
+ 
+ /*!
+@@ -263,6 +266,42 @@ typedef struct _cyw43_wifi_scan_options_t {
+ } cyw43_wifi_scan_options_t;
+ //!\}
+ 
++/*!
++ * \brief WPA2-Enterprise EAP methods
++ * \anchor CYW43_EAP_METHOD_
++ */
++//!\{
++typedef enum {
++    CYW43_EAP_METHOD_TLS,        ///< EAP-TLS (certificate based)
++    CYW43_EAP_METHOD_PEAP,       ///< PEAP-MSCHAPv2 (username/password)
++    CYW43_EAP_METHOD_TTLS        ///< EAP-TTLS (username/password)
++} cyw43_eap_method_t;
++//!\}
++
++/*!
++ * \brief WPA2-Enterprise credentials structure
++ */
++//!\{
++typedef struct _cyw43_wpa2_ent_credentials_t {
++    uint8_t *identity;              ///< EAP identity (for PEAP/TTLS)
++    size_t identity_len;            ///< Length of identity
++    uint8_t *username;              ///< Username (for PEAP/TTLS)
++    size_t username_len;            ///< Length of username
++    uint8_t *password;              ///< Password (for PEAP/TTLS)
++    size_t password_len;            ///< Length of password
++    uint8_t *ca_cert;               ///< CA certificate (PEM format)
++    size_t ca_cert_len;             ///< Length of CA certificate
++    uint8_t *client_cert;           ///< Client certificate (for EAP-TLS, PEM format)
++    size_t client_cert_len;         ///< Length of client certificate
++    uint8_t *private_key;           ///< Private key (for EAP-TLS, PEM format)
++    size_t private_key_len;         ///< Length of private key
++    uint8_t *private_key_passwd;    ///< Private key password
++    size_t private_key_passwd_len;  ///< Length of private key password
++    cyw43_eap_method_t eap_method;  ///< EAP method to use
++    bool disable_time_check;        ///< Disable certificate time validation
++} cyw43_wpa2_ent_credentials_t;
++//!\}
++
+ typedef struct _cyw43_ll_t {
+     uint32_t opaque[CYW43_LL_STATE_SIZE_WORDS]; // note: array of words
+ } cyw43_ll_t;
+@@ -286,6 +325,13 @@ void cyw43_ll_wifi_set_wpa_auth(cyw43_ll_t *self);
+ void cyw43_ll_wifi_rejoin(cyw43_ll_t *self);
+ int cyw43_ll_wifi_get_bssid(cyw43_ll_t *self_in, uint8_t *bssid);
+ 
++// WPA2-Enterprise functions
++int cyw43_ll_wifi_wpa2_ent_enable(cyw43_ll_t *self);
++int cyw43_ll_wifi_wpa2_ent_disable(cyw43_ll_t *self);
++int cyw43_ll_wifi_wpa2_ent_set_credentials(cyw43_ll_t *self, const cyw43_wpa2_ent_credentials_t *credentials);
++int cyw43_ll_wifi_wpa2_ent_clear_credentials(cyw43_ll_t *self);
++int cyw43_ll_wifi_join_wpa2_ent(cyw43_ll_t *self, size_t ssid_len, const uint8_t *ssid, const cyw43_wpa2_ent_credentials_t *credentials, const uint8_t *bssid, uint32_t channel);
++
+ int cyw43_ll_wifi_ap_init(cyw43_ll_t *self, size_t ssid_len, const uint8_t *ssid, uint32_t auth, size_t key_len, const uint8_t *key, uint32_t channel);
+ int cyw43_ll_wifi_ap_set_up(cyw43_ll_t *self, bool up);
+ int cyw43_ll_wifi_ap_get_stas(cyw43_ll_t *self, int *num_stas, uint8_t *macs);
+diff --git a/src/cyw43_wpa2_enterprise.c b/src/cyw43_wpa2_enterprise.c
+new file mode 100644
+index 0000000..b7eda99
+--- /dev/null
++++ b/src/cyw43_wpa2_enterprise.c
+@@ -0,0 +1,314 @@
++/*
++ * This file is part of the cyw43-driver
++ *
++ * Copyright (C) 2024 Raspberry Pi (Trading) Ltd.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright notice,
++ *    this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright notice,
++ *    this list of conditions and the following disclaimer in the documentation
++ *    and/or other materials provided with the distribution.
++ * 3. Any redistribution, use, or modification in source or binary form is done
++ *    solely for personal benefit and not for any commercial purpose or for
++ *    monetary gain.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE LICENSOR AND COPYRIGHT OWNER "AS IS" AND ANY
++ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
++ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++ * DISCLAIMED. IN NO EVENT SHALL THE LICENSOR OR COPYRIGHT OWNER BE LIABLE FOR
++ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
++ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
++ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ * This software is also available for use with certain devices under different
++ * terms, as set out in the top level LICENSE file.  For commercial licensing
++ * options please email contact@georgerobotics.com.au.
++ */
++
++#include "cyw43.h"
++#include "cyw43_ll.h"
++#include <stdlib.h>
++#include <string.h>
++
++// WPA2-Enterprise IOCTL commands (based on ESP32 implementation patterns)
++#define CYW43_IOCTL_SET_WPA2_ENT_ENABLE     (0x200)
++#define CYW43_IOCTL_SET_WPA2_ENT_DISABLE    (0x201)
++#define CYW43_IOCTL_SET_WPA2_ENT_IDENTITY   (0x202)
++#define CYW43_IOCTL_SET_WPA2_ENT_USERNAME   (0x203)
++#define CYW43_IOCTL_SET_WPA2_ENT_PASSWORD   (0x204)
++#define CYW43_IOCTL_SET_WPA2_ENT_CA_CERT    (0x205)
++#define CYW43_IOCTL_SET_WPA2_ENT_CLIENT_CERT (0x206)
++#define CYW43_IOCTL_SET_WPA2_ENT_PRIVATE_KEY (0x207)
++
++// Helper function to safely copy credential data
++static int cyw43_wpa2_ent_copy_credential(uint8_t **dest, size_t *dest_len, 
++                                          const uint8_t *src, size_t src_len) {
++    if (*dest) {
++        free(*dest);
++        *dest = NULL;
++        *dest_len = 0;
++    }
++    
++    if (src && src_len > 0) {
++        *dest = malloc(src_len + 1); // +1 for null termination
++        if (!*dest) {
++            return CYW43_EPERM;
++        }
++        memcpy(*dest, src, src_len);
++        (*dest)[src_len] = 0; // Null terminate
++        *dest_len = src_len;
++    }
++    
++    return 0;
++}
++
++// Helper function to free credentials
++static void cyw43_wpa2_ent_free_credentials(cyw43_wpa2_ent_credentials_t *cred) {
++    if (!cred) return;
++    
++    if (cred->identity) { free(cred->identity); cred->identity = NULL; }
++    if (cred->username) { free(cred->username); cred->username = NULL; }
++    if (cred->password) { free(cred->password); cred->password = NULL; }
++    if (cred->ca_cert) { free(cred->ca_cert); cred->ca_cert = NULL; }
++    if (cred->client_cert) { free(cred->client_cert); cred->client_cert = NULL; }
++    if (cred->private_key) { free(cred->private_key); cred->private_key = NULL; }
++    if (cred->private_key_passwd) { free(cred->private_key_passwd); cred->private_key_passwd = NULL; }
++    
++    cred->identity_len = 0;
++    cred->username_len = 0;
++    cred->password_len = 0;
++    cred->ca_cert_len = 0;
++    cred->client_cert_len = 0;
++    cred->private_key_len = 0;
++    cred->private_key_passwd_len = 0;
++}
++
++// Low-level implementation functions
++int cyw43_ll_wifi_wpa2_ent_enable(cyw43_ll_t *self) {
++    // Enable WPA2-Enterprise mode in the chipset
++    // This would typically involve setting supplicant state and enabling 802.1X
++    uint32_t enable = 1;
++    return cyw43_ll_ioctl(self, CYW43_IOCTL_SET_WPA2_ENT_ENABLE, sizeof(enable), (uint8_t*)&enable, CYW43_ITF_STA);
++}
++
++int cyw43_ll_wifi_wpa2_ent_disable(cyw43_ll_t *self) {
++    // Disable WPA2-Enterprise mode in the chipset
++    uint32_t disable = 0;
++    return cyw43_ll_ioctl(self, CYW43_IOCTL_SET_WPA2_ENT_DISABLE, sizeof(disable), (uint8_t*)&disable, CYW43_ITF_STA);
++}
++
++int cyw43_ll_wifi_wpa2_ent_set_credentials(cyw43_ll_t *self, const cyw43_wpa2_ent_credentials_t *credentials) {
++    if (!credentials) {
++        return CYW43_EINVAL;
++    }
++    
++    int result = 0;
++    
++    // Set identity if provided
++    if (credentials->identity && credentials->identity_len > 0) {
++        result = cyw43_ll_ioctl(self, CYW43_IOCTL_SET_WPA2_ENT_IDENTITY, 
++                               credentials->identity_len, (uint8_t*)credentials->identity, CYW43_ITF_STA);
++        if (result != 0) return result;
++    }
++    
++    // Set username if provided
++    if (credentials->username && credentials->username_len > 0) {
++        result = cyw43_ll_ioctl(self, CYW43_IOCTL_SET_WPA2_ENT_USERNAME, 
++                               credentials->username_len, (uint8_t*)credentials->username, CYW43_ITF_STA);
++        if (result != 0) return result;
++    }
++    
++    // Set password if provided
++    if (credentials->password && credentials->password_len > 0) {
++        result = cyw43_ll_ioctl(self, CYW43_IOCTL_SET_WPA2_ENT_PASSWORD, 
++                               credentials->password_len, (uint8_t*)credentials->password, CYW43_ITF_STA);
++        if (result != 0) return result;
++    }
++    
++    // Set CA certificate if provided
++    if (credentials->ca_cert && credentials->ca_cert_len > 0) {
++        result = cyw43_ll_ioctl(self, CYW43_IOCTL_SET_WPA2_ENT_CA_CERT, 
++                               credentials->ca_cert_len, (uint8_t*)credentials->ca_cert, CYW43_ITF_STA);
++        if (result != 0) return result;
++    }
++    
++    // Set client certificate if provided (for EAP-TLS)
++    if (credentials->client_cert && credentials->client_cert_len > 0) {
++        result = cyw43_ll_ioctl(self, CYW43_IOCTL_SET_WPA2_ENT_CLIENT_CERT, 
++                               credentials->client_cert_len, (uint8_t*)credentials->client_cert, CYW43_ITF_STA);
++        if (result != 0) return result;
++    }
++    
++    // Set private key if provided (for EAP-TLS)
++    if (credentials->private_key && credentials->private_key_len > 0) {
++        result = cyw43_ll_ioctl(self, CYW43_IOCTL_SET_WPA2_ENT_PRIVATE_KEY, 
++                               credentials->private_key_len, (uint8_t*)credentials->private_key, CYW43_ITF_STA);
++        if (result != 0) return result;
++    }
++    
++    return 0;
++}
++
++int cyw43_ll_wifi_wpa2_ent_clear_credentials(cyw43_ll_t *self) {
++    // Clear all stored credentials in the chipset
++    // This would involve sending clear commands for each credential type
++    int result = 0;
++    
++    // Clear each credential type
++    uint8_t empty = 0;
++    result |= cyw43_ll_ioctl(self, CYW43_IOCTL_SET_WPA2_ENT_IDENTITY, 0, &empty, CYW43_ITF_STA);
++    result |= cyw43_ll_ioctl(self, CYW43_IOCTL_SET_WPA2_ENT_USERNAME, 0, &empty, CYW43_ITF_STA);
++    result |= cyw43_ll_ioctl(self, CYW43_IOCTL_SET_WPA2_ENT_PASSWORD, 0, &empty, CYW43_ITF_STA);
++    result |= cyw43_ll_ioctl(self, CYW43_IOCTL_SET_WPA2_ENT_CA_CERT, 0, &empty, CYW43_ITF_STA);
++    result |= cyw43_ll_ioctl(self, CYW43_IOCTL_SET_WPA2_ENT_CLIENT_CERT, 0, &empty, CYW43_ITF_STA);
++    result |= cyw43_ll_ioctl(self, CYW43_IOCTL_SET_WPA2_ENT_PRIVATE_KEY, 0, &empty, CYW43_ITF_STA);
++    
++    return result;
++}
++
++int cyw43_ll_wifi_join_wpa2_ent(cyw43_ll_t *self, size_t ssid_len, const uint8_t *ssid, 
++                                const cyw43_wpa2_ent_credentials_t *credentials, 
++                                const uint8_t *bssid, uint32_t channel) {
++    if (!ssid || ssid_len == 0 || !credentials) {
++        return CYW43_EINVAL;
++    }
++    
++    // Set credentials first
++    int result = cyw43_ll_wifi_wpa2_ent_set_credentials(self, credentials);
++    if (result != 0) {
++        return result;
++    }
++    
++    // Determine authentication type based on EAP method
++    uint32_t auth_type;
++    switch (credentials->eap_method) {
++        case CYW43_EAP_METHOD_TLS:
++            auth_type = CYW43_AUTH_WPA2_ENTERPRISE_TLS;
++            break;
++        case CYW43_EAP_METHOD_PEAP:
++            auth_type = CYW43_AUTH_WPA2_ENTERPRISE_PEAP;
++            break;
++        case CYW43_EAP_METHOD_TTLS:
++            auth_type = CYW43_AUTH_WPA2_ENTERPRISE_TTLS;
++            break;
++        default:
++            return CYW43_EINVAL;
++    }
++    
++    // Use the existing join function with enterprise auth type
++    return cyw43_ll_wifi_join(self, ssid_len, ssid, 0, NULL, auth_type, bssid, channel);
++}
++
++// High-level API implementations
++int cyw43_wifi_wpa2_ent_enable(cyw43_t *self) {
++    assert(cyw43_is_initialized(self));
++    
++    int result = cyw43_ll_wifi_wpa2_ent_enable(&self->cyw43_ll);
++    if (result == 0) {
++        self->wpa2_ent_enabled = true;
++        
++        // Allocate credentials structure if not already allocated
++        if (!self->wpa2_ent_credentials) {
++            self->wpa2_ent_credentials = calloc(1, sizeof(cyw43_wpa2_ent_credentials_t));
++            if (!self->wpa2_ent_credentials) {
++                self->wpa2_ent_enabled = false;
++                return CYW43_EPERM; // No memory
++            }
++        }
++    }
++    
++    return result;
++}
++
++int cyw43_wifi_wpa2_ent_disable(cyw43_t *self) {
++    assert(cyw43_is_initialized(self));
++    
++    int result = cyw43_ll_wifi_wpa2_ent_disable(&self->cyw43_ll);
++    
++    // Clear local state
++    self->wpa2_ent_enabled = false;
++    
++    if (self->wpa2_ent_credentials) {
++        cyw43_wpa2_ent_free_credentials(self->wpa2_ent_credentials);
++        free(self->wpa2_ent_credentials);
++        self->wpa2_ent_credentials = NULL;
++    }
++    
++    // Clear credentials from chipset
++    cyw43_ll_wifi_wpa2_ent_clear_credentials(&self->cyw43_ll);
++    
++    return result;
++}
++
++int cyw43_wifi_wpa2_ent_set_credentials(cyw43_t *self, const cyw43_wpa2_ent_credentials_t *credentials) {
++    assert(cyw43_is_initialized(self));
++    
++    if (!self->wpa2_ent_enabled || !self->wpa2_ent_credentials || !credentials) {
++        return CYW43_EINVAL;
++    }
++    
++    // Clear existing credentials
++    cyw43_wpa2_ent_free_credentials(self->wpa2_ent_credentials);
++    
++    // Copy new credentials
++    int result = 0;
++    
++    result |= cyw43_wpa2_ent_copy_credential(&self->wpa2_ent_credentials->identity, 
++                                            &self->wpa2_ent_credentials->identity_len,
++                                            credentials->identity, credentials->identity_len);
++    
++    result |= cyw43_wpa2_ent_copy_credential(&self->wpa2_ent_credentials->username,
++                                            &self->wpa2_ent_credentials->username_len,
++                                            credentials->username, credentials->username_len);
++    
++    result |= cyw43_wpa2_ent_copy_credential(&self->wpa2_ent_credentials->password,
++                                            &self->wpa2_ent_credentials->password_len,
++                                            credentials->password, credentials->password_len);
++    
++    result |= cyw43_wpa2_ent_copy_credential(&self->wpa2_ent_credentials->ca_cert,
++                                            &self->wpa2_ent_credentials->ca_cert_len,
++                                            credentials->ca_cert, credentials->ca_cert_len);
++    
++    result |= cyw43_wpa2_ent_copy_credential(&self->wpa2_ent_credentials->client_cert,
++                                            &self->wpa2_ent_credentials->client_cert_len,
++                                            credentials->client_cert, credentials->client_cert_len);
++    
++    result |= cyw43_wpa2_ent_copy_credential(&self->wpa2_ent_credentials->private_key,
++                                            &self->wpa2_ent_credentials->private_key_len,
++                                            credentials->private_key, credentials->private_key_len);
++    
++    result |= cyw43_wpa2_ent_copy_credential(&self->wpa2_ent_credentials->private_key_passwd,
++                                            &self->wpa2_ent_credentials->private_key_passwd_len,
++                                            credentials->private_key_passwd, credentials->private_key_passwd_len);
++    
++    // Copy other settings
++    self->wpa2_ent_credentials->eap_method = credentials->eap_method;
++    self->wpa2_ent_credentials->disable_time_check = credentials->disable_time_check;
++    
++    if (result != 0) {
++        // If copying failed, clear everything
++        cyw43_wpa2_ent_free_credentials(self->wpa2_ent_credentials);
++        return result;
++    }
++    
++    // Set credentials in the chipset
++    return cyw43_ll_wifi_wpa2_ent_set_credentials(&self->cyw43_ll, self->wpa2_ent_credentials);
++}
++
++int cyw43_wifi_join_wpa2_ent(cyw43_t *self, size_t ssid_len, const uint8_t *ssid, 
++                              const uint8_t *bssid, uint32_t channel) {
++    assert(cyw43_is_initialized(self));
++    
++    if (!self->wpa2_ent_enabled || !self->wpa2_ent_credentials) {
++        return CYW43_EINVAL;
++    }
++    
++    return cyw43_ll_wifi_join_wpa2_ent(&self->cyw43_ll, ssid_len, ssid, 
++                                      self->wpa2_ent_credentials, bssid, channel);
++}
+\ No newline at end of file
