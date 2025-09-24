@@ -18,7 +18,7 @@
 
 int cyw43_arch_wifi_wpa2_ent_enable(void) {
     if (!cyw43_is_initialized(&cyw43_state)) {
-        return PICO_ERROR_BAD_PARAMS;
+        return PICO_ERROR_INVALID_ARG;
     }
     
     int result = cyw43_wifi_wpa2_ent_enable(&cyw43_state);
@@ -33,7 +33,7 @@ int cyw43_arch_wifi_wpa2_ent_enable(void) {
 
 int cyw43_arch_wifi_wpa2_ent_disable(void) {
     if (!cyw43_is_initialized(&cyw43_state)) {
-        return PICO_ERROR_BAD_PARAMS;
+        return PICO_ERROR_INVALID_ARG;
     }
     
     int result = cyw43_wifi_wpa2_ent_disable(&cyw43_state);
@@ -48,7 +48,7 @@ int cyw43_arch_wifi_wpa2_ent_disable(void) {
 
 int cyw43_arch_wifi_wpa2_ent_set_credentials(const cyw43_wpa2_ent_credentials_t *credentials) {
     if (!cyw43_is_initialized(&cyw43_state) || !credentials) {
-        return PICO_ERROR_BAD_PARAMS;
+        return PICO_ERROR_INVALID_ARG;
     }
     
     int result = cyw43_wifi_wpa2_ent_set_credentials(&cyw43_state, credentials);
@@ -63,7 +63,7 @@ int cyw43_arch_wifi_wpa2_ent_set_credentials(const cyw43_wpa2_ent_credentials_t 
 
 int cyw43_arch_wifi_connect_wpa2_ent_blocking(const char *ssid) {
     if (!ssid) {
-        return PICO_ERROR_BAD_PARAMS;
+        return PICO_ERROR_INVALID_ARG;
     }
     
     // Start the connection
@@ -104,7 +104,7 @@ int cyw43_arch_wifi_connect_wpa2_ent_blocking(const char *ssid) {
 
 int cyw43_arch_wifi_connect_wpa2_ent_timeout_ms(const char *ssid, uint32_t timeout_ms) {
     if (!ssid) {
-        return PICO_ERROR_BAD_PARAMS;
+        return PICO_ERROR_INVALID_ARG;
     }
     
     // Start the connection
@@ -152,11 +152,11 @@ int cyw43_arch_wifi_connect_wpa2_ent_timeout_ms(const char *ssid, uint32_t timeo
 
 int cyw43_arch_wifi_connect_wpa2_ent_async(const char *ssid) {
     if (!cyw43_is_initialized(&cyw43_state)) {
-        return PICO_ERROR_BAD_PARAMS;
+        return PICO_ERROR_INVALID_ARG;
     }
     
     if (!ssid) {
-        return PICO_ERROR_BAD_PARAMS;
+        return PICO_ERROR_INVALID_ARG;
     }
     
     CYW43_ARCH_DEBUG("Attempting WPA2-Enterprise connection to SSID: %s\n", ssid);
@@ -164,7 +164,7 @@ int cyw43_arch_wifi_connect_wpa2_ent_async(const char *ssid) {
     // Convert SSID to required format
     size_t ssid_len = strlen(ssid);
     if (ssid_len == 0 || ssid_len > 32) {
-        return PICO_ERROR_BAD_PARAMS;
+        return PICO_ERROR_INVALID_ARG;
     }
     
     // Call the low-level join function

@@ -15,8 +15,10 @@ add_executable(wpa2_enterprise_example
 target_link_libraries(wpa2_enterprise_example 
     pico_stdlib
     pico_cyw43_arch_lwip_poll  # or pico_cyw43_arch_lwip_threadsafe_background
-    pico_lwip_http
 )
+
+# Add include directory for lwIP config
+target_include_directories(wpa2_enterprise_example PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Enable USB output and disable UART output
 pico_enable_stdio_usb(wpa2_enterprise_example 1)
