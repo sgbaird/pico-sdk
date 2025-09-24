@@ -490,6 +490,75 @@ int cyw43_arch_wifi_connect_async(const char *ssid, const char *pw, uint32_t aut
 int cyw43_arch_wifi_connect_bssid_async(const char *ssid, const uint8_t *bssid, const char *pw, uint32_t auth);
 
 /*!
+ * \brief Enable WPA2-Enterprise authentication
+ * \ingroup pico_cyw43_arch
+ *
+ * This function enables WPA2-Enterprise mode for subsequent network connections.
+ * Must be called before attempting to connect to enterprise networks.
+ *
+ * \return 0 on success, negative error code on failure
+ */
+int cyw43_arch_wifi_wpa2_ent_enable(void);
+
+/*!
+ * \brief Disable WPA2-Enterprise authentication
+ * \ingroup pico_cyw43_arch
+ *
+ * This function disables WPA2-Enterprise mode and clears stored credentials.
+ *
+ * \return 0 on success, negative error code on failure
+ */
+int cyw43_arch_wifi_wpa2_ent_disable(void);
+
+/*!
+ * \brief Set WPA2-Enterprise credentials
+ * \ingroup pico_cyw43_arch
+ *
+ * This function configures the credentials for WPA2-Enterprise authentication.
+ *
+ * \param credentials pointer to WPA2-Enterprise credentials structure
+ * \return 0 on success, negative error code on failure
+ */
+int cyw43_arch_wifi_wpa2_ent_set_credentials(const cyw43_wpa2_ent_credentials_t *credentials);
+
+/*!
+ * \brief Attempt to connect to a WPA2-Enterprise wireless network, blocking until connected or failed
+ * \ingroup pico_cyw43_arch
+ *
+ * This method connects to a WPA2-Enterprise network using the configured credentials.
+ * WPA2-Enterprise must be enabled and credentials must be set before calling this function.
+ *
+ * \param ssid the network name to connect to
+ * \return 0 if the connection is successful, negative error code on failure
+ */
+int cyw43_arch_wifi_connect_wpa2_ent_blocking(const char *ssid);
+
+/*!
+ * \brief Attempt to connect to a WPA2-Enterprise wireless network with timeout
+ * \ingroup pico_cyw43_arch
+ *
+ * This method connects to a WPA2-Enterprise network using the configured credentials
+ * with a specified timeout.
+ *
+ * \param ssid the network name to connect to
+ * \param timeout timeout in milliseconds
+ * \return 0 if the connection is successful, negative error code on failure or timeout
+ */
+int cyw43_arch_wifi_connect_wpa2_ent_timeout_ms(const char *ssid, uint32_t timeout);
+
+/*!
+ * \brief Attempt to connect to a WPA2-Enterprise wireless network asynchronously
+ * \ingroup pico_cyw43_arch
+ *
+ * This method starts connecting to a WPA2-Enterprise network using the configured credentials.
+ * You should subsequently check the status by calling \ref cyw43_wifi_link_status.
+ *
+ * \param ssid the network name to connect to
+ * \return 0 if the scan was started successfully, negative error code otherwise
+ */
+int cyw43_arch_wifi_connect_wpa2_ent_async(const char *ssid);
+
+/*!
  * \brief Set a GPIO pin on the wireless chip to a given value
  * \ingroup pico_cyw43_arch
  * \note this method does not check for errors setting the GPIO. You can use the lower level \ref cyw43_gpio_set instead if you wish
